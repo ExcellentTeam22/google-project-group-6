@@ -24,17 +24,25 @@ class DataBase:
         in a dictionary defined as {filename: content}
         :return: None
         """
+
+        all_words_frequencies = dict()
+
         with zipfile.ZipFile('Archive.zip', 'r') as zip_obj:
             for file_name in zip_obj.namelist():
                 with zip_obj.open(file_name) as file:
                     for row, byte_line in enumerate(file.readlines()):
                         self.total_num_of_lines += 1
                         str_line = byte_line.decode('utf-8')
-                        if str_line and str_line != '\n':
-                            self.files_content[file_name] += [str_line]
-                        self.__words_appearances(str_line, row, file_name)
 
-    def __words_appearances(self, line, row, file_name):
+                        self.files_content[file_name] += [str_line]
+                        self.__words_appearances(str_line, row, file_name, all_words_frequencies)
+
+        # 'Saves all the words that appear more than sqrt(total_num_of_lines)'
+        for key in all_words_frequencies.keys():
+            if all_words_frequencies[key] > numpy.sqrt(self.total_num_of_lines):
+                self.frequencies.setdefault(key, all_words_frequencies[key])
+
+    def __words_appearances(self, line, row, file_name, all_words_frequencies):
         """
         This function go over all the words in Archive.zip file that loaded to files_content
         and stores each word in a dictionary that defined as {word: {filename: Tuple(lines appearance)}}
@@ -42,7 +50,6 @@ class DataBase:
         than sqrt(total_num_of_lines)
         :return: None
         """
-        all_words_frequencies = dict()
 
         for word in line.split():
             lower_case_word = word.lower()
@@ -54,11 +61,6 @@ class DataBase:
             if all_words_frequencies.get(lower_case_word) is None:
                 all_words_frequencies[lower_case_word] = 0
             all_words_frequencies[lower_case_word] += 1
-
-        # 'Saves all the words that appear more than sqrt(total_num_of_lines)'
-        for key in all_words_frequencies.keys():
-            if all_words_frequencies[key] > numpy.sqrt(self.total_num_of_lines):
-                self.frequencies.setdefault(key, all_words_frequencies[key])
 
     def get_total_num_of_lines(self):
         return self.total_num_of_lines

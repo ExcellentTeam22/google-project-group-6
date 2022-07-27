@@ -4,7 +4,8 @@ db = DataBase.DataBase()
 words = db.get_words()
 
 
-def validate_input(sentence: str):
+def find_in_data_base(sent: str):
+    sentence = sent  # Because we change the given sentence, so we want to have also the original sentence
     for word in sentence.split():
         if not words.get(word):
             return set()
@@ -12,11 +13,6 @@ def validate_input(sentence: str):
             sentence = sentence.replace(word, "")
     if not sentence:
         return set()
-
-
-def find_in_data_base(sent: str):
-    sentence = sent  # Because we change the given sentence, so we want to have also the original sentence
-    validate_input(sent)
 
     word_min_frequency = sentence.split()[0]
     min_frequency = len(words.get(word_min_frequency).keys())
@@ -33,8 +29,8 @@ def find_in_data_base(sent: str):
     if not sentence:
         result = set()
         for key in words.get(word_min_frequency).keys():
-            for line in list(words.get(word_min_frequency)[key]):
-                result.add((key,  db.get_files_content()[key][line].decode("utf-8")))
+            for line_num in list(words.get(word_min_frequency)[key]):
+                result.add((key,  db.get_files_content()[key][line_num]))
         return result
 
     files_and_lines_numbers = list()
@@ -48,14 +44,10 @@ def find_in_data_base(sent: str):
     result = set()
     for file_and_lines_numbers in files_and_lines_numbers:
         for line in list(file_and_lines_numbers.values())[0]:
-            if sent in db.get_files_content()[list(file_and_lines_numbers.keys())[0]][line].decode("utf-8"):
+            if sent in db.get_files_content()[list(file_and_lines_numbers.keys())[0]][line]:
                 result.add((list(file_and_lines_numbers.keys())[0], db.get_files_content()[list(file_and_lines_numbers.keys())[0]][line]))
     return result
 
-
-if __name__ == '__main__':
-    for item in find_in_data_base("Internet"):
-        print(item)
 
 
 
