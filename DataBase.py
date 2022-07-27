@@ -1,6 +1,8 @@
 import collections
 import zipfile
+
 import numpy
+
 from singletonDecorator import singleton
 
 """
@@ -15,7 +17,6 @@ class DataBase:
         self.words = dict()
         self.frequencies = dict()
         self.__read_zip()
-        self.__words_appearances()
 
     def __read_zip(self):
         """
@@ -26,9 +27,13 @@ class DataBase:
         with zipfile.ZipFile('Archive.zip', 'r') as zip_obj:
             for file_name in zip_obj.namelist():
                 with zip_obj.open(file_name) as file:
-                    self.files_content[file_name] = file.readlines()
+                    for row, byte_line in enumerate(file.readlines()):
+                        str_line = byte_line.decode('utf-8')
+                        if str_line and str_line != '\n':
+                            self.files_content[file_name] += [str_line]
+                        self.__words_appearances(str_line, file_name)
 
-    def __words_appearances(self):
+    def __words_appearances(self, line, file_name):
         """
         This function go over all the words in Archive.zip file that loaded to files_content
         and stores each word in a dictionary that defined as {word: {filename: Tuple(lines appearance)}}
@@ -41,17 +46,17 @@ class DataBase:
         for index, key in enumerate(self.files_content.keys()):
             for row, line in enumerate(self.files_content[key]):
                 self.total_num_of_lines += 1
-                for byte_word in line.split():
-                    string_word = byte_word.decode('utf-8')
-                    clean_string_word = "".join([ch for ch in string_word if ch.isalpha()])
-                    if clean_string_word:
-                        self.words.setdefault(clean_string_word, {})
-                        self.words[clean_string_word].setdefault(key, ())
-                        self.words[clean_string_word][key] += (row,)
-                        all_words_frequencies.setdefault(byte_word, 0)
-                        all_words_frequencies[byte_word] += 1
+                for word in line.split():
+                    lower_case_word = word.lower()
+                    if self.words.get(lower_case_word) is None:
+                        self.words[lower_case_word] = dict()
+                    if self.words[lower_case_word].get(file_name) is None:
+                        self.words[lower_case_word][file_name] = tuple()
+                    self.words[lower_case_word][file_name] += (row,)
+                    all_words_frequencies.setdefault(lower_case_word, 0)
+                    all_words_frequencies[lower_case_word] += 1
 
-        'Saves all the words that appear more than sqrt(total_num_of_lines)'
+        # 'Saves all the words that appear more than sqrt(total_num_of_lines)'
         for key in all_words_frequencies.keys():
             if all_words_frequencies[key] > numpy.sqrt(self.total_num_of_lines):
                 self.frequencies.setdefault(key, all_words_frequencies[key])
