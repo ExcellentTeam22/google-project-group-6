@@ -28,12 +28,13 @@ class DataBase:
             for file_name in zip_obj.namelist():
                 with zip_obj.open(file_name) as file:
                     for row, byte_line in enumerate(file.readlines()):
+                        self.total_num_of_lines += 1
                         str_line = byte_line.decode('utf-8')
                         if str_line and str_line != '\n':
                             self.files_content[file_name] += [str_line]
-                        self.__words_appearances(str_line, file_name)
+                        self.__words_appearances(str_line, row, file_name)
 
-    def __words_appearances(self, line, file_name):
+    def __words_appearances(self, line, row, file_name):
         """
         This function go over all the words in Archive.zip file that loaded to files_content
         and stores each word in a dictionary that defined as {word: {filename: Tuple(lines appearance)}}
@@ -43,18 +44,16 @@ class DataBase:
         """
         all_words_frequencies = dict()
 
-        for index, key in enumerate(self.files_content.keys()):
-            for row, line in enumerate(self.files_content[key]):
-                self.total_num_of_lines += 1
-                for word in line.split():
-                    lower_case_word = word.lower()
-                    if self.words.get(lower_case_word) is None:
-                        self.words[lower_case_word] = dict()
-                    if self.words[lower_case_word].get(file_name) is None:
-                        self.words[lower_case_word][file_name] = tuple()
-                    self.words[lower_case_word][file_name] += (row,)
-                    all_words_frequencies.setdefault(lower_case_word, 0)
-                    all_words_frequencies[lower_case_word] += 1
+        for word in line.split():
+            lower_case_word = word.lower()
+            if self.words.get(lower_case_word) is None:
+                self.words[lower_case_word] = dict()
+            if self.words[lower_case_word].get(file_name) is None:
+                self.words[lower_case_word][file_name] = tuple()
+            self.words[lower_case_word][file_name] += (row,)
+            if all_words_frequencies.get(lower_case_word) is None:
+                all_words_frequencies[lower_case_word] = 0
+            all_words_frequencies[lower_case_word] += 1
 
         # 'Saves all the words that appear more than sqrt(total_num_of_lines)'
         for key in all_words_frequencies.keys():
